@@ -210,6 +210,16 @@ static int kmod_config_add_alias(struct kmod_config *config, const char *name,
 	return 0;
 }
 
+static int kmod_config_add_mask(struct kmod_config *config, const char *modname)
+{
+	// TODO: implement adding mod to mask list
+	// pre-requirement: mask list in ctx->config
+	ERR(config->ctx, "mask command parsed for mod '%s'\n",
+		modname);
+
+	return 0;
+}
+
 static int kmod_config_add_blacklist(struct kmod_config *config, const char *modname)
 {
 	_cleanup_free_ char *p;
@@ -803,6 +813,13 @@ static int kmod_config_parse(struct kmod_config *config, int fd, const char *fil
 				goto syntax_error;
 
 			kmod_config_add_alias(config, alias, modname);
+		} else if (streq(cmd, "mask")) {
+			char *modname = strtok_r(NULL, "\t ", &saveptr);
+
+			if (underscores(modname) < 0)
+				goto syntax_error;
+
+			kmod_config_add_mask(config, modname);
 		} else if (streq(cmd, "blacklist")) {
 			char *modname = strtok_r(NULL, "\t ", &saveptr);
 
