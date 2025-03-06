@@ -50,6 +50,11 @@ struct kmod_weakdep {
 	unsigned int n_weak;
 };
 
+const char *kmod_mask_get_modname(const struct kmod_list *l)
+{
+	return l->data;
+}
+
 const char *kmod_blacklist_get_modname(const struct kmod_list *l)
 {
 	return l->data;
@@ -214,8 +219,24 @@ static int kmod_config_add_mask(struct kmod_config *config, const char *modname)
 {
 	// TODO: implement adding mod to mask list
 	// pre-requirement: mask list in ctx->config
-	ERR(config->ctx, "mask command parsed for mod '%s'\n",
-		modname);
+
+	_cleanup_free_ char *p;
+	struct kmod_list *list;
+
+	DBG(config->ctx, "modname=%s\n", modname);
+
+	_clang_suppress_alloc_ p = strdup(modname);
+	if (!p)
+		return -ENOMEM;
+
+	list = kmod_list_append(config->masks, p);
+	if (!list)
+		return -ENOMEM;
+
+	TAKE_PTR(p);
+	config->masks = list;
+
+	ERR(config->ctx, "mask command parsed for mod '%s'\n", modname);
 
 	return 0;
 }
@@ -890,6 +911,7 @@ done_next:
 void kmod_config_free(struct kmod_config *config)
 {
 	kmod_list_release(config->aliases, free);
+	kmod_list_release(config->masks, free);
 	kmod_list_release(config->blacklists, free);
 	kmod_list_release(config->options, free);
 	kmod_list_release(config->install_commands, free);
@@ -1113,7 +1135,8 @@ oom:
  **********************************************************************/
 
 enum config_type {
-	CONFIG_TYPE_BLACKLIST = 0,
+	CONFIG_TYPE_MASK = 0,
+	CONFIG_TYPE_BLACKLIST,
 	CONFIG_TYPE_INSTALL,
 	CONFIG_TYPE_REMOVE,
 	CONFIG_TYPE_ALIAS,
@@ -1156,6 +1179,10 @@ static struct kmod_config_iter *kmod_config_iter_new(const struct kmod_ctx *ctx,
 	iter->type = type;
 
 	switch (type) {
+	case CONFIG_TYPE_MASK:
+		iter->list = config->masks;
+		iter->get_key = kmod_mask_get_modname;
+		break;
 	case CONFIG_TYPE_BLACKLIST:
 		iter->list = config->blacklists;
 		iter->get_key = kmod_blacklist_get_modname;
@@ -1195,6 +1222,14 @@ static struct kmod_config_iter *kmod_config_iter_new(const struct kmod_ctx *ctx,
 	}
 
 	return iter;
+}
+
+KMOD_EXPORT struct kmod_config_iter *kmod_config_get_masks(const struct kmod_ctx *ctx)
+{
+	if (ctx == NULL)
+		return NULL;
+
+	return kmod_config_iter_new(ctx, CONFIG_TYPE_MASK);
 }
 
 KMOD_EXPORT struct kmod_config_iter *kmod_config_get_blacklists(const struct kmod_ctx *ctx)
