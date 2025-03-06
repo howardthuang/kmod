@@ -1,0 +1,4 @@
+#!/bin/bash
+
+meson setup --native-file build-dev.ini builddir/
+meson compile -C builddir/
