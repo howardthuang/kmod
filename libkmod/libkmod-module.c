@@ -1261,15 +1261,17 @@ KMOD_EXPORT int kmod_module_get_softdeps(const struct kmod_module *mod,
 			continue;
 
 		array = kmod_softdep_get_pre(l, &count);
-		*pre = lookup_dep(mod->ctx, array, count);
+		// *pre = lookup_dep(mod->ctx, array, count);
+		*pre = kmod_list_append_list(*pre, lookup_dep(mod->ctx, array, count));
 		array = kmod_softdep_get_post(l, &count);
-		*post = lookup_dep(mod->ctx, array, count);
+		// *post = lookup_dep(mod->ctx, array, count);
+		*post = kmod_list_append_list(*post, lookup_dep(mod->ctx, array, count));
 
 		/*
 		 * find only the first command, as modprobe from
 		 * module-init-tools does
 		 */
-		break;
+		// break;
 	}
 
 	return 0;
