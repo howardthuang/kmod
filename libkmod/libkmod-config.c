@@ -646,13 +646,18 @@ static void kcmdline_parse_result(struct kmod_config *config, char *modname, cha
 
 	DBG(config->ctx, "%s %s\n", modname, param);
 
-	if (streq(modname, "modprobe") && !strncmp(param, "blacklist=", 10)) {
+	if (streq(modname, "modprobe")) {
+		bool is_mask = !strncmp(param, "mask=", 5);
+		bool is_blacklist = !strncmp(param, "blacklist=", 10);
 		for (;;) {
 			char *t = strsep(&value, ",");
 			if (t == NULL)
 				break;
 
-			kmod_config_add_blacklist(config, t);
+			if (is_blacklist)
+				kmod_config_add_blacklist(config, t);
+			else if (is_mask)
+				kmod_config_add_mask(config, t);
 		}
 	} else {
 		if (underscores(modname) < 0) {
