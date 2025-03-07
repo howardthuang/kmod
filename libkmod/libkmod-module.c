@@ -1037,9 +1037,8 @@ KMOD_EXPORT int kmod_module_probe_insert_module(
 			return 0;
 	}
 
-	// TODO: maybe add new entry to enum kmod_probe to use as return code instead of using 1?
 	if (module_is_masked(mod))
-		return 1;
+		return 0;
 
 	if (module_is_blacklisted(mod)) {
 		if (mod->alias != NULL && (flags & KMOD_PROBE_APPLY_BLACKLIST_ALIAS_ONLY))

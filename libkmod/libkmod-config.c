@@ -217,9 +217,6 @@ static int kmod_config_add_alias(struct kmod_config *config, const char *name,
 
 static int kmod_config_add_mask(struct kmod_config *config, const char *modname)
 {
-	// TODO: implement adding mod to mask list
-	// pre-requirement: mask list in ctx->config
-
 	_cleanup_free_ char *p;
 	struct kmod_list *list;
 
@@ -235,8 +232,6 @@ static int kmod_config_add_mask(struct kmod_config *config, const char *modname)
 
 	TAKE_PTR(p);
 	config->masks = list;
-
-	ERR(config->ctx, "mask command parsed for mod '%s'\n", modname);
 
 	return 0;
 }
