@@ -1,0 +1,20 @@
+#!/bin/bash
+
+sudo apt-get update
+sudo apt-get install --yes \
+  autoconf \
+  automake \
+  build-essential \
+  clang \
+  gcc-multilib \
+  gcovr \
+  git \
+  gtk-doc-tools \
+  liblzma-dev \
+  libssl-dev \
+  libtool \
+  libzstd-dev \
+  meson \
+  scdoc \
+  zlib1g-dev \
+  zstd
