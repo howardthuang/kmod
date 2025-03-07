@@ -227,7 +227,7 @@ KMOD_EXPORT struct kmod_ctx *kmod_new(const char *dirname, const char *const *co
 	ctx->refcount = 1;
 	ctx->log_fn = log_filep;
 	ctx->log_data = stderr;
-	ctx->log_priority = LOG_ERR;
+	ctx->log_priority = LOG_DEBUG;
 
 	ctx->dirname = get_kernel_release(dirname);
 	if (ctx->dirname == NULL) {
