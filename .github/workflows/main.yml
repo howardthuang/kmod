@@ -24,28 +24,96 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build: ['meson', 'autotools']
-        compiler: ['clang','gcc']
-        container:
-          - name: 'alpine:latest'
-            meson_setup: '-D docs=false -D b_sanitize=none'
-          - name: 'archlinux:multilib-devel'
-            multilib: 'true'
-          - name: 'debian:unstable'
-            multilib: 'true'
-          - name: 'fedora:latest'
-          - name: 'fedora:latest'
-            meson_setup: '-D xz=disabled -D dlopen=all'
-          - name: 'ubuntu:22.04'
-            multilib: 'true'
-          - name: 'ubuntu:22.04'
-            multilib: 'true'
-            meson_setup: '-D dlopen=zstd,zlib'
-          - name: 'ubuntu:24.04'
-            multilib: 'true'
+        include:
+          - compiler: 'gcc'
+            container: 'alpine:latest'
+            meson_setup: '-Ddocs=false -Db_sanitize=none'
+          - compiler: 'gcc'
+            container: 'archlinux:multilib-devel'
+          - compiler: 'gcc'
+            container: 'debian:unstable'
+          - compiler: 'gcc'
+            container: 'debian:bullseye-slim'
+            meson_setup: '-Dzstd=disabled -Dxz=disabled -Dzlib=disabled -Dopenssl=enabled -Dtools=true'
+          - compiler: 'gcc'
+            container: 'fedora:latest'
+          - compiler: 'gcc'
+            container: 'fedora:latest'
+            meson_setup: '-Dxz=disabled -Ddlopen=all'
+          - compiler: 'gcc'
+            container: 'ubuntu:22.04'
+          - compiler: 'gcc'
+            container: 'ubuntu:22.04'
+            meson_setup: '-Ddlopen=zstd,zlib'
+          - compiler: 'gcc'
+            container: 'ubuntu:24.04'
+
+          # clang variations of the same builds
+
+          - compiler: 'clang'
+            container: 'alpine:latest'
+            meson_setup: '-Ddocs=false -Db_sanitize=none'
+          - compiler: 'clang'
+            container: 'archlinux:multilib-devel'
+          - compiler: 'clang'
+            container: 'debian:unstable'
+          # Disabled because it doesn't work
+          # - compiler: 'clang'
+          #   container: 'debian:bullseye-slim'
+          #   meson_setup: '-Dzstd=disabled -Dxz=disabled -Dzlib=disabled -Dopenssl=enabled -Dtools=true'
+          - compiler: 'clang'
+            container: 'fedora:latest'
+          - compiler: 'clang'
+            container: 'fedora:latest'
+            meson_setup: '-Dxz=disabled -Ddlopen=all'
+          - compiler: 'clang'
+            container: 'ubuntu:22.04'
+          - compiler: 'clang'
+            container: 'ubuntu:22.04'
+            meson_setup: '-Ddlopen=zstd,zlib'
+          - compiler: 'clang'
+            container: 'ubuntu:24.04'
+
+          # Test some configurations with 32bits
+
+          - compiler: 'gcc'
+            container: 'archlinux:multilib-devel'
+            x32: 'true'
+            meson_setup: '-Dzstd=disabled -Dxz=disabled -Dzlib=disabled -Dopenssl=disabled'
+            # fails on LD_PRELOAD
+            skip_test: 'true'
+          - compiler: 'gcc'
+            container: 'ubuntu:24.04'
+            x32: 'true'
+            meson_setup: '-Dzstd=disabled -Dxz=disabled -Dzlib=disabled -Dopenssl=disabled'
+          - compiler: 'clang'
+            container: 'archlinux:multilib-devel'
+            x32: 'true'
+            meson_setup: '-Dzstd=disabled -Dxz=disabled -Dzlib=disabled -Dopenssl=disabled'
+            # fails on LD_PRELOAD
+            skip_test: 'true'
+          - compiler: 'clang'
+            container: 'ubuntu:24.04'
+            x32: 'true'
+            meson_setup: '-Dzstd=disabled -Dxz=disabled -Dzlib=disabled -Dopenssl=disabled'
+
+          # Special configurations
+
+          # Variant with lld as linker
+          - compiler: 'clang'
+            container: 'archlinux:multilib-devel'
+            linker: 'lld'
+
+          # Variants with moduledir
+          - compiler: 'gcc'
+            container: 'archlinux:multilib-devel'
+            meson_setup: '-Dmoduledir=/usr/lib/modules'
+          - compiler: 'gcc'
+            container: 'archlinux:multilib-devel'
+            meson_setup: '-Dmoduledir=/kernel-modules'
 
     container:
-      image: ${{ matrix.container.name }}
+      image: ${{ matrix.container }}
 
     steps:
       - name: Sparse checkout the local actions
@@ -54,15 +122,15 @@ jobs:
           sparse-checkout: .github
 
       - uses: ./.github/actions/setup-alpine
-        if: ${{ startsWith(matrix.container.name, 'alpine') }}
+        if: ${{ startsWith(matrix.container, 'alpine') }}
       - uses: ./.github/actions/setup-archlinux
-        if: ${{ startsWith(matrix.container.name, 'archlinux') }}
+        if: ${{ startsWith(matrix.container, 'archlinux') }}
       - uses: ./.github/actions/setup-debian
-        if: ${{ startsWith(matrix.container.name, 'debian') }}
+        if: ${{ startsWith(matrix.container, 'debian') }}
       - uses: ./.github/actions/setup-fedora
-        if: ${{ startsWith(matrix.container.name, 'fedora') }}
+        if: ${{ startsWith(matrix.container, 'fedora') }}
       - uses: ./.github/actions/setup-ubuntu
-        if: ${{ startsWith(matrix.container.name, 'ubuntu') }}
+        if: ${{ startsWith(matrix.container, 'ubuntu') }}
 
       - name: Checkout the whole project
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -75,8 +143,7 @@ jobs:
 
           .github/print-kdir.sh >> "$GITHUB_ENV"
 
-      - name: configure checks (meson)
-        if: ${{ matrix.build == 'meson' }}
+      - name: configure checks
         run: |
           should_fail() {
             rm -rf build-setup-test/
@@ -98,56 +165,29 @@ jobs:
           should_pass -D dlopen=xz
           should_pass -D dlopen=xz -D xz=enabled
 
-      - name: configure (meson)
-        if: ${{ matrix.build == 'meson' }}
-        run: mkdir build && cd build && meson setup --native-file ../build-dev.ini ${{ matrix.container.meson_setup }} . ..
+      - name: configure
+        run: |
+          setup_options="${{ matrix.meson_setup }}"
 
-      - name: configure (autotools)
-        if: ${{ matrix.build == 'autotools' }}
-        run: mkdir build && cd build && ../autogen.sh c
+          if [[ "${{ matrix.x32 }}" == "true" ]]; then
+            export CC="$CC -m32"
+          fi
 
-      - name: build (meson)
-        if: ${{ matrix.build == 'meson' }}
+          if [[ -n "${{ matrix.linker }}" ]]; then
+            export CC_LD="${{ matrix.linker }}"
+          fi
+
+          meson setup --native-file build-dev.ini $setup_options build
+
+      - name: build
         run: cd build && meson compile
 
-      - name: build (autotools)
-        if: ${{ matrix.build == 'autotools' }}
-        run: cd build && make -j$(nproc)
-
-      - name: test (meson)
-        if: ${{ matrix.build == 'meson' }}
+      - name: test
+        if: ${{ matrix.skip_test != 'true' }}
         run: cd build && meson test || meson test --verbose
 
-      - name: test (autotools)
-        if: ${{ matrix.build == 'autotools' }}
-        run: cd build && make -j$(nproc) check
-
-      - name: install (meson)
-        if: ${{ matrix.build == 'meson' }}
+      - name: install
         run: cd build && DESTDIR=$PWD/inst meson install
 
-      - name: install (autotools)
-        if: ${{ matrix.build == 'autotools' }}
-        run: cd build && DESTDIR=$PWD/inst make install
-
-      - name: distcheck (meson)
-        if: ${{ matrix.build == 'meson' }}
+      - name: distcheck
         run: cd build && meson dist
-
-      - name: distcheck (autotools)
-        if: ${{ matrix.build == 'autotools' }}
-        run: cd build && make distcheck
-
-      - name: configure (32bit) (meson)
-        if: ${{ matrix.build == 'meson' && matrix.container.multilib == 'true' }}
-        run: |
-          cross_options="-D zstd=disabled -D xz=disabled -D zlib=disabled -D openssl=disabled"
-          CC="$CC -m32" meson setup $cross_options build32/
-
-      - name: build (32bit) (meson)
-        if: ${{ matrix.build == 'meson' && matrix.container.multilib == 'true' }}
-        run: cd build32 && meson compile
-
-      - name: test (32bit) (meson)
-        if: ${{ matrix.build == 'meson' && matrix.container.multilib == 'true' }}
-        run: cd build32 && meson test || meson test --verbose

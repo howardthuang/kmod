@@ -544,12 +544,6 @@ if get_option('build-tests')
   subdir('testsuite')
 endif
 
-# ------------------------------------------------------------------------------
-# dist && autotools compat
-# ------------------------------------------------------------------------------
-
-meson.add_dist_script('autogen.sh')
-
 # ------------------------------------------------------------------
 # documentation
 # ------------------------------------------------------------------
@@ -563,6 +557,10 @@ if get_option('docs')
   test_gtkdoc = find_program('scripts/test-gtkdoc.sh')
   subdir('libkmod/docs')
 endif
+
+# ------------------------------------------------------------------
+# summary
+# ------------------------------------------------------------------
 
 summary({
   'prefix'      : prefixdir,
@@ -598,3 +596,8 @@ summary({
 summary({
   'features'    : ' '.join(features)
 }, section : '')
+
+summary({
+  'Compiler'        : cc.get_id() + ' (' + cc.version() + ')',
+  'Linker'          : cc.get_linker_id(),
+}, section : 'Build tools')
