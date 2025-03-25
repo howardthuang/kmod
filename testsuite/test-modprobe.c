@@ -266,6 +266,16 @@ DEFINE_TEST_WITH_FUNC(modprobe_param_kcmdline9, modprobe_param_kcmdline,
 		.out = TESTSUITE_ROOTFS "test-modprobe/module-param-kcmdline9/correct.txt",
 	});
 
+DEFINE_TEST_WITH_FUNC(modprobe_param_kcmdline10, modprobe_param_kcmdline,
+	.description = "check if multiple masks are parsed correctly",
+	.config = {
+		[TC_UNAME_R] = "4.4.4",
+		[TC_ROOTFS] = TESTSUITE_ROOTFS "test-modprobe/module-param-kcmdline10",
+	},
+	.output = {
+		.out = TESTSUITE_ROOTFS "test-modprobe/module-param-kcmdline10/correct.txt",
+	});
+
 static noreturn int modprobe_force(const struct test *t)
 {
 	EXEC_MODPROBE("--force", "mod-simple");
@@ -403,6 +413,67 @@ DEFINE_TEST(modprobe_blacklisted_by_name_filtered,
 		[TC_ROOTFS] = TESTSUITE_ROOTFS "test-modprobe/blacklist",
 	},
 	.modules_loaded = "",
+	.modules_not_loaded = "mod-simple",
+	);
+
+static noreturn int modprobe_masked(const struct test *t)
+{
+	EXEC_MODPROBE("mod-foo-b");
+	exit(EXIT_FAILURE);
+}
+DEFINE_TEST(modprobe_masked,
+	.description = "check if modprobe module does not load module with mask entry",
+	.config = {
+		[TC_UNAME_R] = "4.4.4",
+		[TC_ROOTFS] = TESTSUITE_ROOTFS "test-modprobe/mask",
+	},
+	.modules_loaded = "",
+	.modules_not_loaded = "mod-foo-b",
+	);
+
+static noreturn int modprobe_masked_dependee(const struct test *t)
+{
+	EXEC_MODPROBE("mod-foo");
+	exit(EXIT_SUCCESS);
+}
+DEFINE_TEST(modprobe_masked_dependee,
+	.description = "check if modprobe dependee fails because of masked dependency",
+	.expected_fail = true,
+	.config = {
+		[TC_UNAME_R] = "4.4.4",
+		[TC_ROOTFS] = TESTSUITE_ROOTFS "test-modprobe/mask",
+	},
+	.modules_loaded = "",
+	.modules_not_loaded = "mod-foo,mod-foo-a,mod-foo-b,mod-foo-c",
+	);
+
+static noreturn int modprobe_masked_softdep_dependee(const struct test *t)
+{
+	EXEC_MODPROBE("mod-foo-a");
+	exit(EXIT_FAILURE);
+}
+DEFINE_TEST(modprobe_masked_softdep_dependee,
+	.description = "check if modprobe dependee loads dependee of a masked softdep",
+	.config = {
+		[TC_UNAME_R] = "4.4.4",
+		[TC_ROOTFS] = TESTSUITE_ROOTFS "test-modprobe/mask-softdep",
+	},
+	.modules_loaded = "mod-foo-a",
+	.modules_not_loaded = "mod-simple",
+	);
+
+static noreturn int modprobe_masked_weakdep_dependee(const struct test *t)
+{
+	EXEC_MODPROBE("mod-weakdep");
+	exit(EXIT_FAILURE);
+}
+DEFINE_TEST(modprobe_masked_weakdep_dependee,
+	.description = "check if modprobe dependee loads dependee of a masked weakdep",
+	.config = {
+		[TC_UNAME_R] = "4.4.4",
+		[TC_ROOTFS] = TESTSUITE_ROOTFS "test-modprobe/mask-weakdep",
+	},
+	.modules_loaded = "mod-weakdep",
 	.modules_not_loaded = "mod-simple",
 	);
 
