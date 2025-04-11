@@ -419,10 +419,11 @@ DEFINE_TEST(modprobe_blacklisted_by_name_filtered,
 static noreturn int modprobe_masked(const struct test *t)
 {
 	EXEC_MODPROBE("mod-foo-b");
-	exit(EXIT_FAILURE);
+	exit(EXIT_SUCCESS);
 }
 DEFINE_TEST(modprobe_masked,
 	.description = "check if modprobe module does not load module with mask entry",
+	.expected_fail = true,
 	.config = {
 		[TC_UNAME_R] = "4.4.4",
 		[TC_ROOTFS] = TESTSUITE_ROOTFS "test-modprobe/mask",

@@ -1038,7 +1038,7 @@ KMOD_EXPORT int kmod_module_probe_insert_module(
 	}
 
 	if (module_is_masked(mod))
-		return 0;
+		return -KMOD_PROBE_APPLY_MASK;
 
 	if (module_is_blacklisted(mod)) {
 		if (mod->alias != NULL && (flags & KMOD_PROBE_APPLY_BLACKLIST_ALIAS_ONLY))

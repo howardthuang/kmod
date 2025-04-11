@@ -581,6 +581,10 @@ static int insmod_insert(struct kmod_module *mod, int flags, const char *extra_o
 			    "or unknown parameter (see dmesg)\n",
 			    kmod_module_get_name(mod));
 			break;
+		case -KMOD_PROBE_APPLY_MASK:
+			ERR("could not insert '%s': Module is masked\n",
+			    kmod_module_get_name(mod));
+			break;
 		default:
 			ERR("could not insert '%s': %s\n", kmod_module_get_name(mod),
 			    strerror(-err));

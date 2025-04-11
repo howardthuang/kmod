@@ -765,6 +765,8 @@ int kmod_module_insert_module(struct kmod_module *mod, unsigned int flags,
  * module is blacklisted
  * @KMOD_PROBE_APPLY_BLACKLIST_ALIAS_ONLY: probe will return early with this
  * enum, if the module is an alias and is blacklisted
+ * @KMOD_PROBE_APPLY_MASK: probe will return early with this enum if the module
+ * is masked
  *
  * Bitmask which defines the behaviour of kmod_module_probe_insert_module().
  */
@@ -780,6 +782,7 @@ enum kmod_probe {
 	KMOD_PROBE_APPLY_BLACKLIST_ALL = 0x10000,
 	KMOD_PROBE_APPLY_BLACKLIST = 0x20000,
 	KMOD_PROBE_APPLY_BLACKLIST_ALIAS_ONLY = 0x40000,
+	KMOD_PROBE_APPLY_MASK = 0x80000,
 };
 
 /**
