@@ -930,6 +930,7 @@ int kmod_module_get_weakdeps(const struct kmod_module *mod, struct kmod_list **w
 enum kmod_filter {
 	KMOD_FILTER_BLACKLIST = 0x00001,
 	KMOD_FILTER_BUILTIN = 0x00002,
+	KMOD_FILTER_MASK = 0x00004,
 };
 
 /**

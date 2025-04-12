@@ -776,6 +776,9 @@ KMOD_EXPORT int kmod_module_apply_filter(const struct kmod_ctx *ctx,
 		if ((filter_type & KMOD_FILTER_BUILTIN) && kmod_module_is_builtin(mod))
 			continue;
 
+		if ((filter_type & KMOD_FILTER_MASK) && module_is_masked(mod))
+			continue;
+
 		node = kmod_list_append(*output, mod);
 		if (node == NULL)
 			goto fail;
@@ -1055,6 +1058,22 @@ KMOD_EXPORT int kmod_module_probe_insert_module(
 					 &list);
 	if (err < 0)
 		return err;
+
+	if (flags & KMOD_PROBE_APPLY_MASK) {
+		struct kmod_list *filtered = NULL;
+
+		err = kmod_module_apply_filter(mod->ctx, KMOD_FILTER_MASK, list,
+					       &filtered);
+
+		if (err < 0)
+			return err;
+
+		kmod_module_unref_list(list);
+		if (filtered == NULL)
+			return KMOD_PROBE_APPLY_MASK;
+
+		list = filtered;
+	}
 
 	if (flags & KMOD_PROBE_APPLY_BLACKLIST_ALL) {
 		struct kmod_list *filtered = NULL;

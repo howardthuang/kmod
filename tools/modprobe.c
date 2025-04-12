@@ -629,6 +629,7 @@ static int insmod(struct kmod_ctx *ctx, const char *alias, const char *extra_opt
 		flags |= KMOD_PROBE_DRY_RUN;
 
 	flags |= KMOD_PROBE_APPLY_BLACKLIST_ALIAS_ONLY;
+	flags |= KMOD_PROBE_APPLY_MASK;
 
 	if (use_blacklist)
 		flags |= KMOD_PROBE_APPLY_BLACKLIST;
