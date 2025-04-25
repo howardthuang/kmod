@@ -266,6 +266,16 @@ DEFINE_TEST_WITH_FUNC(modprobe_param_kcmdline9, modprobe_param_kcmdline,
 		.out = TESTSUITE_ROOTFS "test-modprobe/module-param-kcmdline9/correct.txt",
 	});
 
+DEFINE_TEST_WITH_FUNC(modprobe_param_kcmdline10, modprobe_param_kcmdline,
+	.description = "check if multiple masks are parsed correctly",
+	.config = {
+		[TC_UNAME_R] = "4.4.4",
+		[TC_ROOTFS] = TESTSUITE_ROOTFS "test-modprobe/module-param-kcmdline10",
+	},
+	.output = {
+		.out = TESTSUITE_ROOTFS "test-modprobe/module-param-kcmdline10/correct.txt",
+	});
+
 static noreturn int modprobe_force(const struct test *t)
 {
 	EXEC_MODPROBE("--force", "mod-simple");
@@ -436,6 +446,56 @@ DEFINE_TEST(modprobe_blacklisted_softdep,
 		[TC_INIT_MODULE_RETCODES] = "",
 	},
 	.modules_loaded = "mod-simple,mod-foo-a",
+	);
+
+static noreturn int modprobe_masked(const struct test *t)
+{
+	EXEC_MODPROBE("mod-foo-b");
+	exit(EXIT_SUCCESS);
+}
+DEFINE_TEST(modprobe_masked,
+	.description = "check if modprobe module does not load module with mask entry",
+	.expected_fail = true,
+	.config = {
+		[TC_UNAME_R] = "4.4.4",
+		[TC_ROOTFS] = TESTSUITE_ROOTFS "test-modprobe/mask",
+		[TC_INIT_MODULE_RETCODES] = "",
+	},
+	.modules_loaded = "",
+	.modules_not_loaded = "mod-foo-b",
+	);
+
+static noreturn int modprobe_masked_dependency(const struct test *t)
+{
+	EXEC_MODPROBE("mod-foo");
+	exit(EXIT_SUCCESS);
+}
+DEFINE_TEST(modprobe_masked_dependency,
+	.description = "check if modprobe dependant fails because of masked dependency",
+	.expected_fail = true,
+	.config = {
+		[TC_UNAME_R] = "4.4.4",
+		[TC_ROOTFS] = TESTSUITE_ROOTFS "test-modprobe/mask",
+		[TC_INIT_MODULE_RETCODES] = "mod_foo:-1:1",
+	},
+	.modules_loaded = "",
+	.modules_not_loaded = "mod-foo,mod-foo-a,mod-foo-b,mod-foo-c",
+	);
+
+static noreturn int modprobe_masked_softdep(const struct test *t)
+{
+	EXEC_MODPROBE("mod-simple");
+	exit(EXIT_FAILURE);
+}
+DEFINE_TEST(modprobe_masked_softdep,
+	.description = "check if modprobe dependant loads dependant of a masked softdep",
+	.config = {
+		[TC_UNAME_R] = "4.4.4",
+		[TC_ROOTFS] = TESTSUITE_ROOTFS "test-modprobe/mask-softdep",
+		[TC_INIT_MODULE_RETCODES] = "",
+	},
+	.modules_loaded = "mod-simple",
+	.modules_not_loaded = "mod-foo-a",
 	);
 
 TESTSUITE_MAIN();
